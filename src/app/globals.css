@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Outfit:wght@200;300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap');
+
+@import "tailwindcss";
+
+:root {
+  /* Premium Dark Forest & Gold Palette */
+  --akta-obsidian: #01382f;       /* Deep premium forest green base */
+  --akta-forest: #014b3f;         /* Luxury dark forest green for containers */
+  --akta-forest-medium: #026353;  /* Medium accent forest green */
+  --akta-forest-light: #03806b;   /* Soft lighter green */
+  --akta-gold: #dfb76c;           /* Elegant Champagne/Mustard Gold */
+  --akta-gold-dark: #b5904e;      /* Deep Gold/Amber */
+  --akta-gold-light: #f5edd6;     /* Pale Cream Gold */
+  --akta-beige: #e9e4da;          /* Text color: Warm beige */
+  --akta-beige-dark: #b8b1a3;     /* Muted beige for secondary text */
+  --akta-cream-bg: #fdfcf9;       /* Contrast background for light tabs */
+  
+  --font-serif: 'Cormorant Garamond', serif;
+  --font-body: 'Cormorant Garamond', serif;
+
+  --ros-bg: var(--akta-obsidian);
+  --ros-text: var(--akta-beige);
+  --ros-border: rgba(223, 183, 108, 0.15);
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    background-color: var(--akta-obsidian);
+  }
+
+  body {
+    background: var(--akta-obsidian);
+    color: var(--akta-beige);
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-mono-slab, .font-serif-luxury {
+    font-family: var(--font-serif);
+    font-weight: 300;
+    letter-spacing: 0.05em;
+  }
+}
+
+/* Custom noise overlay to add rich organic texture */
+.noise-bg {
+  position: relative;
+}
+.noise-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.035;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  z-index: 1;
+}
+
+/* Circular Text Path rotating animation */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 25s linear infinite;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom luxury scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--akta-obsidian);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--akta-forest-medium);
+  border-radius: 3px;
+  border: 1px solid var(--akta-obsidian);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--akta-gold-dark);
+}
+
+/* Circular Text Path styling */
+.circular-text svg {
+  width: 100%;
+  height: 100%;
+}
+
+.circular-text text {
+  font-family: var(--font-serif);
+  font-size: 13.5px;
+  fill: var(--akta-gold);
+  letter-spacing: 6.5px;
+  text-transform: uppercase;
+  font-weight: 400;
+}
