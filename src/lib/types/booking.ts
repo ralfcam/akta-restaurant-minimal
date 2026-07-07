@@ -42,7 +42,7 @@ export interface DateServiceOverride {
   lastArrivalTime: string;
   slotIntervalMinutes: number;
   notes?: string;
-  tables: DateTableOverride[];
+  tables: WeeklyTableTemplate[];
 }
 
 export interface Reservation {

@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { signOut } from 'next-auth/react';
 import AdminSettingsTab from '@/components/admin/AdminSettingsTab';
-import AdminTemplatesTab from '@/components/admin/AdminTemplatesTab';
-import AdminCalendarTab from '@/components/admin/AdminCalendarTab';
+import AdminConfigurationTab from '@/components/admin/AdminConfigurationTab';
 
 // Premium Inline SVGs for Admin
 const LockIcon = () => (
@@ -76,7 +75,7 @@ export default function AdminConsole() {
   const [errorMsg, setErrorMsg] = useState<string>('');
 
   // Data states
-  const [mainTab, setMainTab] = useState<'menu' | 'bookings' | 'settings' | 'templates' | 'calendar'>('bookings');
+  const [mainTab, setMainTab] = useState<'menu' | 'bookings' | 'settings' | 'configuration'>('bookings');
   const [menuMode, setMenuMode] = useState<'interactive' | 'pdf' | 'markdown'>('interactive');
   const [pdfUrl, setPdfUrl] = useState<string>('');
   const [pdfName, setPdfName] = useState<string>('');
@@ -513,22 +512,16 @@ export default function AdminConsole() {
             Réservations
           </button>
           <button
-            onClick={() => setMainTab('calendar')}
-            className={`text-xs uppercase tracking-[0.1em] px-4 py-2 border whitespace-nowrap ${mainTab === 'calendar' ? 'border-[var(--akta-gold)] text-[var(--akta-gold)]' : 'border-transparent text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)]'}`}
-          >
-            Calendrier
-          </button>
-          <button
             onClick={() => setMainTab('menu')}
             className={`text-xs uppercase tracking-[0.1em] px-4 py-2 border whitespace-nowrap ${mainTab === 'menu' ? 'border-[var(--akta-gold)] text-[var(--akta-gold)]' : 'border-transparent text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)]'}`}
           >
             Carte & Menus
           </button>
           <button
-            onClick={() => setMainTab('templates')}
-            className={`text-xs uppercase tracking-[0.1em] px-4 py-2 border whitespace-nowrap ${mainTab === 'templates' ? 'border-[var(--akta-gold)] text-[var(--akta-gold)]' : 'border-transparent text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)]'}`}
+            onClick={() => setMainTab('configuration')}
+            className={`text-xs uppercase tracking-[0.1em] px-4 py-2 border whitespace-nowrap ${mainTab === 'configuration' ? 'border-[var(--akta-gold)] text-[var(--akta-gold)]' : 'border-transparent text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)]'}`}
           >
-            Configuration
+            Configuration & Calendrier
           </button>
           <button
             onClick={() => setMainTab('settings')}
@@ -549,10 +542,8 @@ export default function AdminConsole() {
       <div className="max-w-6xl mx-auto px-6 mt-12">
         {mainTab === 'settings' ? (
           <AdminSettingsTab token={session.access_token} />
-        ) : mainTab === 'templates' ? (
-          <AdminTemplatesTab token={session.access_token} />
-        ) : mainTab === 'calendar' ? (
-          <AdminCalendarTab token={session.access_token} />
+        ) : mainTab === 'configuration' ? (
+          <AdminConfigurationTab token={session.access_token} />
         ) : mainTab === 'bookings' ? (
           <div className="space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-[var(--akta-gold)]/10 pb-4">

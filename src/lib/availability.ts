@@ -99,14 +99,8 @@ export async function calculateAvailability(
   // Generate Table Inventory
   let tableInventory: { label: string, capacity: number, isAvailable: boolean }[] = [];
   
-  if (isOverride && override) {
-    tableInventory = override.tables.filter(t => t.isActive && !t.isBlocked).map((t, idx) => ({
-      label: t.tableLabel || `T${t.tableCapacity}-${idx+1}`,
-      capacity: t.tableCapacity,
-      isAvailable: true
-    }));
-  } else if (defaultTemplate) {
-    defaultTemplate.tables.forEach((t) => {
+  if (activeSetup) {
+    activeSetup.tables.forEach((t) => {
       for (let i = 0; i < t.tableCount; i++) {
         tableInventory.push({
           label: `T${t.tableCapacity}-${i+1}`,
