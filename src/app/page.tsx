@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { MENU_DATA, MenuCategory } from '../data/menu';
+import BookingModal from '../components/BookingModal';
+import { parseMarkdownToHtml } from '@/lib/markdown';
 
 interface IconProps extends React.SVGProps<SVGSVGElement> {
   size?: number | string;
@@ -68,7 +70,13 @@ const NeighborhoodMap = ({ lang }: { lang: 'fr' | 'en' }) => {
 export default function Home() {
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
   const [scrolled, setScrolled] = useState<boolean>(false);
+  const [menuMode, setMenuMode] = useState<'interactive' | 'pdf' | 'markdown'>('interactive');
+  const [pdfUrl, setPdfUrl] = useState<string>('');
+  const [pdfName, setPdfName] = useState<string>('');
+  const [markdownFr, setMarkdownFr] = useState<string>('');
+  const [markdownEn, setMarkdownEn] = useState<string>('');
   const [menuData, setMenuData] = useState<MenuCategory[]>(MENU_DATA);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   const reservationUrl = "https://www.thefork.ch/restaurant/akta-r842907/menu";
 
@@ -78,6 +86,29 @@ export default function Home() {
       const systemLang = navigator.language.substring(0, 2).toLowerCase();
       setLang(systemLang === 'en' ? 'en' : 'fr');
     }
+  }, []);
+
+  // Load dynamic menu configuration on mount
+  useEffect(() => {
+    const loadMenu = async () => {
+      try {
+        const res = await fetch(`/api/menu?t=${Date.now()}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.mode) setMenuMode(data.mode);
+          if (data.pdfUrl) setPdfUrl(data.pdfUrl);
+          if (data.pdfName) setPdfName(data.pdfName);
+          if (data.markdownFr) setMarkdownFr(data.markdownFr);
+          if (data.markdownEn) setMarkdownEn(data.markdownEn);
+          if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+            setMenuData(data.categories);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load dynamic menu:", err);
+      }
+    };
+    loadMenu();
   }, []);
 
   // Monitor scroll for fixed navigation background toggle
@@ -120,24 +151,34 @@ export default function Home() {
             </button>
             
             {/* Direct Booking Link */}
-            <a 
-              href={reservationUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button 
+              onClick={() => setIsBookingModalOpen(true)}
               className="text-[11px] uppercase tracking-[0.2em] bg-[var(--akta-gold)] text-[var(--akta-obsidian)] hover:bg-[var(--akta-gold-light)] px-5 py-2.5 transition-all duration-200 font-bold flex items-center gap-2"
             >
               <CalendarIcon size={12} />
               <span>{lang === 'fr' ? 'RESERVATION' : 'BOOK A TABLE'}</span>
-            </a>
+            </button>
           </div>
         </div>
       </nav>
 
       {/* HERO SECTION */}
-      <header className="min-h-screen flex flex-col justify-between items-center pt-48 pb-24 px-6 relative z-10 max-w-4xl mx-auto text-center">
+      <header className="min-h-screen flex flex-col justify-between items-center pt-48 pb-24 px-6 relative text-center w-full z-10">
+        {/* Background Image with Premium Dark Overlay */}
+        <div className="absolute inset-0 -z-10 select-none pointer-events-none">
+          <Image 
+            src="/photos/optimized/TimGrenard_Akta_sept2025-53818.webp" 
+            alt="Äkta Restaurant Hero" 
+            fill 
+            className="object-cover opacity-35 transition-opacity duration-700"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[var(--akta-obsidian)]/20 via-[var(--akta-obsidian)]/50 to-[var(--akta-obsidian)]"></div>
+        </div>
+
         <div></div>
 
-        <div className="space-y-8 my-auto">
+        <div className="space-y-8 my-auto max-w-4xl mx-auto">
           {/* Main Title */}
           <h1 className="text-6xl sm:text-7xl md:text-8xl font-light tracking-[0.1em] text-[var(--akta-gold)] lowercase">
             äkta
@@ -158,6 +199,56 @@ export default function Home() {
           <p className="opacity-70 font-light">{lang === 'fr' ? 'Samedi' : 'Saturday'} | 18:00-23:00</p>
         </div>
       </header>
+
+      {/* INFINITE SCROLLING TICKER (MENU SELECTION ON A SINGLE LINE) */}
+      <section className="relative z-20 overflow-hidden w-full border-y border-[var(--akta-gold)]/10 bg-[var(--akta-obsidian)] py-5 select-none">
+        <div className="animate-marquee flex whitespace-nowrap">
+          <div className="flex items-center shrink-0 gap-16 pr-16">
+            {[
+              "Olives vertes giganti",
+              "Maigre de ligne",
+              "Entrecôte de bœuf 350g",
+              "Cola de Neuchâtel",
+              "Gingerbeer suisse",
+              "Chocolat chaud",
+              "Spritz Giselle",
+              "Gin Tonic",
+              "Maté Fizz",
+              "Maté Tonic",
+              "Espresso Martini"
+            ].map((item, idx) => (
+              <div key={idx} className="flex items-center gap-16">
+                <span className="text-xs sm:text-sm uppercase tracking-[0.35em] text-[var(--akta-gold)] font-serif">
+                  {item}
+                </span>
+                <span className="text-xs text-[var(--akta-gold)]/30">✦</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center shrink-0 gap-16 pr-16" aria-hidden="true">
+            {[
+              "Olives vertes giganti",
+              "Maigre de ligne",
+              "Entrecôte de bœuf 350g",
+              "Cola de Neuchâtel",
+              "Gingerbeer suisse",
+              "Chocolat chaud",
+              "Spritz Giselle",
+              "Gin Tonic",
+              "Maté Fizz",
+              "Maté Tonic",
+              "Espresso Martini"
+            ].map((item, idx) => (
+              <div key={`dup-${idx}`} className="flex items-center gap-16">
+                <span className="text-xs sm:text-sm uppercase tracking-[0.35em] text-[var(--akta-gold)] font-serif">
+                  {item}
+                </span>
+                <span className="text-xs text-[var(--akta-gold)]/30">✦</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* SECTION 1: PHILOSOPHY */}
       <section className="bg-[var(--akta-forest)] py-36 px-6 md:px-12 relative z-10 border-t border-[var(--akta-gold)]/10">
@@ -185,7 +276,7 @@ export default function Home() {
           {/* Minimal Single Image Frame */}
           <div className="relative aspect-[4/5] w-full border border-[var(--akta-gold)]/10 bg-[var(--akta-obsidian)] overflow-hidden">
             <Image 
-              src="/interior_table.webp" 
+              src="/photos/optimized/TimGrenard_Akta_sept2025-53412.webp" 
               alt="Äkta Table" 
               fill 
               className="object-cover opacity-90"
@@ -211,70 +302,127 @@ export default function Home() {
             <div className="w-12 h-[1px] bg-[var(--akta-gold)]/20 mx-auto mt-4"></div>
           </div>
 
-          {/* Loop all categories sequentially */}
-          <div className="space-y-40">
-            {menuData.map((category) => (
-              <div key={category.id} className="space-y-16">
-                
-                {/* Category Title */}
-                <div className="text-center space-y-2">
-                  <h3 className="text-2xl uppercase tracking-[0.2em] text-[var(--akta-gold)] font-light">
-                    {lang === 'fr' ? category.title : category.titleEn}
-                  </h3>
-                  {category.footerNote && (
-                    <p className="text-[11px] text-[var(--akta-beige-dark)] font-light italic tracking-wider max-w-md mx-auto px-4">
-                      {lang === 'fr' ? category.footerNote : category.footerNoteEn}
-                    </p>
-                  )}
-                  <div className="w-8 h-[1px] bg-[var(--akta-gold)]/10 mx-auto mt-4"></div>
+          {/* Loop all categories or show PDF document or Markdown content */}
+          {menuMode === 'pdf' && pdfUrl ? (
+            <div className="space-y-12 text-center max-w-4xl mx-auto">
+              <div className="bg-[var(--akta-forest)]/10 border border-[var(--akta-gold)]/10 p-8 md:p-12 rounded-sm space-y-8">
+                <div className="max-w-2xl mx-auto space-y-4">
+                  <svg viewBox="0 0 24 24" width="48" height="48" stroke="var(--akta-gold)" strokeWidth="1" fill="none" strokeLinecap="round" strokeLinejoin="round" className="mx-auto opacity-70">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  <p className="text-sm font-light text-[var(--akta-beige-dark)] tracking-wide leading-relaxed">
+                    {lang === 'fr' 
+                      ? 'Notre carte est disponible au téléchargement et à la consultation.' 
+                      : 'Our menu is available for download and online viewing.'}
+                  </p>
+                  
+                  <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4">
+                    <a
+                      href={pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-[var(--akta-gold)] text-[var(--akta-obsidian)] hover:bg-[var(--akta-gold-light)] px-8 py-4 text-xs font-bold uppercase tracking-[0.25em] transition-colors inline-block"
+                    >
+                      {lang === 'fr' ? 'Consulter la Carte' : 'View Menu'}
+                    </a>
+                    <a
+                      href={pdfUrl}
+                      download={pdfName || 'menu'}
+                      className="border border-[var(--akta-gold)]/30 text-[var(--akta-gold)] hover:border-[var(--akta-gold)] hover:bg-[var(--akta-gold)]/5 px-8 py-4 text-xs font-bold uppercase tracking-[0.25em] transition-colors inline-block"
+                    >
+                      {lang === 'fr' ? 'Télécharger (PDF/Word)' : 'Download (PDF/Word)'}
+                    </a>
+                  </div>
                 </div>
 
-                {/* Category Sections */}
-                <div className="space-y-16">
-                  {category.sections.map((section, sIdx) => (
-                    <div key={sIdx} className="space-y-10">
-                      
-                      {/* Section Title */}
-                      <h4 className="text-xs uppercase tracking-[0.25em] text-[var(--akta-gold)]/50 font-light border-b border-[var(--akta-gold)]/5 pb-2 max-w-[200px] mx-auto text-center">
-                        {lang === 'fr' ? section.title : section.titleEn}
-                      </h4>
-
-                      {/* Dishes List */}
-                      <div className="space-y-12">
-                        {section.items.map((item, iIdx) => (
-                          <div key={iIdx} className="space-y-1 text-left max-w-2xl mx-auto">
-                            
-                            {/* Title & Price row */}
-                            <div className="flex justify-between items-baseline gap-6 flex-wrap">
-                              <span className="hidden md:inline-block w-full border-b border-[var(--akta-gold)]/5 border-dashed order-2 mx-2"></span>
-                              <h5 className={`text-lg font-light text-[var(--akta-beige)] order-1 tracking-wide ${(lang === 'fr' ? item.name : (item.nameEn || item.name)).length < 35 ? 'whitespace-nowrap' : ''}`}>
-                                {lang === 'fr' ? item.name : (item.nameEn || item.name)}
-                              </h5>
-                              <span className="font-light text-base text-[var(--akta-gold)] tracking-wide order-3 whitespace-nowrap">
-                                {item.price}
-                              </span>
-                            </div>
-
-                            {/* Description */}
-                            {(item.description || item.descriptionEn) && (
-                              <p className="text-sm text-[var(--akta-beige-dark)] font-light tracking-wide leading-relaxed max-w-xl pt-1">
-                                {lang === 'fr' ? item.description : (item.descriptionEn || item.description)}
-                              </p>
-                            )}
-
-
-
-                          </div>
-                        ))}
-                      </div>
-
-                    </div>
-                  ))}
-                </div>
-
+                {/* Inline PDF Preview iframe only if it's a PDF */}
+                {pdfUrl.toLowerCase().endsWith('.pdf') && (
+                  <div className="mt-12 border border-[var(--akta-gold)]/10 bg-[var(--akta-obsidian)] aspect-[3/4] w-full max-w-2xl mx-auto overflow-hidden relative shadow-2xl">
+                    <iframe
+                      src={`${pdfUrl}#toolbar=0&navpanes=0`}
+                      className="w-full h-full border-none opacity-90 hover:opacity-100 transition-opacity duration-300"
+                      title="Äkta Menu PDF"
+                    />
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ) : menuMode === 'markdown' ? (
+            <div className="max-w-2xl mx-auto bg-[var(--akta-forest-medium)]/10 border border-[var(--akta-gold)]/15 p-8 md:p-16 rounded-sm relative overflow-hidden shadow-2xl">
+              <div 
+                className="prose prose-invert max-w-none text-left tracking-wide leading-relaxed font-sans"
+                dangerouslySetInnerHTML={{ 
+                  __html: parseMarkdownToHtml(lang === 'fr' ? markdownFr : markdownEn) 
+                }} 
+              />
+            </div>
+          ) : (
+            <div className="space-y-40">
+              {menuData.map((category) => (
+                <div key={category.id} className="space-y-16">
+                  
+                  {/* Category Title */}
+                  <div className="text-center space-y-2">
+                    <h3 className="text-2xl uppercase tracking-[0.2em] text-[var(--akta-gold)] font-light">
+                      {lang === 'fr' ? category.title : category.titleEn}
+                    </h3>
+                    {category.footerNote && (
+                      <p className="text-[11px] text-[var(--akta-beige-dark)] font-light italic tracking-wider max-w-md mx-auto px-4">
+                        {lang === 'fr' ? category.footerNote : category.footerNoteEn}
+                      </p>
+                    )}
+                    <div className="w-8 h-[1px] bg-[var(--akta-gold)]/10 mx-auto mt-4"></div>
+                  </div>
+
+                  {/* Category Sections */}
+                  <div className="space-y-16">
+                    {category.sections.map((section, sIdx) => (
+                      <div key={sIdx} className="space-y-10">
+                        
+                        {/* Section Title */}
+                        <h4 className="text-xs uppercase tracking-[0.25em] text-[var(--akta-gold)]/50 font-light border-b border-[var(--akta-gold)]/5 pb-2 max-w-[200px] mx-auto text-center">
+                          {lang === 'fr' ? section.title : section.titleEn}
+                        </h4>
+
+                        {/* Dishes List */}
+                        <div className="space-y-12">
+                          {section.items.map((item, iIdx) => (
+                            <div key={iIdx} className="space-y-1 text-left max-w-2xl mx-auto">
+                              
+                              {/* Title & Price row */}
+                              <div className="flex justify-between items-baseline gap-6 flex-wrap">
+                                <span className="hidden md:inline-block w-full border-b border-[var(--akta-gold)]/5 border-dashed order-2 mx-2"></span>
+                                <h5 className={`text-lg font-light text-[var(--akta-beige)] order-1 tracking-wide ${(lang === 'fr' ? item.name : (item.nameEn || item.name)).length < 35 ? 'whitespace-nowrap' : ''}`}>
+                                  {lang === 'fr' ? item.name : (item.nameEn || item.name)}
+                                </h5>
+                                <span className="font-light text-base text-[var(--akta-gold)] tracking-wide order-3 whitespace-nowrap">
+                                  {item.price}
+                                </span>
+                              </div>
+
+                              {/* Description */}
+                              {(item.description || item.descriptionEn) && (
+                                <p className="text-sm text-[var(--akta-beige-dark)] font-light tracking-wide leading-relaxed max-w-xl pt-1">
+                                  {lang === 'fr' ? item.description : (item.descriptionEn || item.description)}
+                                </p>
+                              )}
+
+                            </div>
+                          ))}
+                        </div>
+
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          )}
 
         </div>
       </section>
@@ -283,10 +431,10 @@ export default function Home() {
       <section className="bg-[var(--akta-forest)] py-24 px-6 md:px-12 relative z-10 border-t border-[var(--akta-gold)]/10">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16">
           <div className="relative aspect-[3/2] w-full border border-[var(--akta-gold)]/10 overflow-hidden bg-[var(--akta-obsidian)]">
-            <Image src="/sourdough.webp" alt="Sourdough" fill className="object-cover opacity-90" />
+            <Image src="/photos/optimized/TimGrenard_Akta_sept2025-54162.webp" alt="Sourdough" fill className="object-cover opacity-90" />
           </div>
           <div className="relative aspect-[3/2] w-full border border-[var(--akta-gold)]/10 overflow-hidden bg-[var(--akta-obsidian)]">
-            <Image src="/gallery_0.webp" alt="Handmade Ceramics" fill className="object-cover opacity-90" />
+            <Image src="/photos/optimized/TimGrenard_Akta_sept2025-53895.webp" alt="Handmade Ceramics" fill className="object-cover opacity-90" />
           </div>
         </div>
       </section>
@@ -344,14 +492,12 @@ export default function Home() {
 
             {/* Action Buttons */}
             <div className="pt-4">
-              <a 
-                href={reservationUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button 
+                onClick={() => setIsBookingModalOpen(true)}
                 className="inline-block text-[11px] uppercase tracking-[0.25em] bg-[var(--akta-gold)] text-[var(--akta-obsidian)] hover:bg-[var(--akta-gold-light)] px-8 py-4 transition-all duration-200 font-bold"
               >
-                {lang === 'fr' ? 'Réserver sur TheFork' : 'Book on TheFork'}
-              </a>
+                {lang === 'fr' ? 'Réserver une table' : 'Book a table'}
+              </button>
             </div>
 
           </div>
@@ -379,6 +525,11 @@ export default function Home() {
         </div>
       </footer>
 
+      <BookingModal 
+        isOpen={isBookingModalOpen} 
+        onClose={() => setIsBookingModalOpen(false)} 
+        lang={lang} 
+      />
     </div>
   );
 }

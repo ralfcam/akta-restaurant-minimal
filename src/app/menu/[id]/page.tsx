@@ -4,6 +4,7 @@ import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MenuCategory } from '../../../data/menu';
+import { parseMarkdownToHtml } from '@/lib/markdown';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -92,6 +93,11 @@ export default function MenuPage({ params }: PageProps) {
   const [menu, setMenu] = useState<MenuCategory | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
+  const [menuMode, setMenuMode] = useState<'interactive' | 'pdf' | 'markdown'>('interactive');
+  const [pdfUrl, setPdfUrl] = useState<string>('');
+  const [pdfName, setPdfName] = useState<string>('');
+  const [markdownFr, setMarkdownFr] = useState<string>('');
+  const [markdownEn, setMarkdownEn] = useState<string>('');
   
   // Custom Filters for Wine & food
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
@@ -128,9 +134,17 @@ export default function MenuPage({ params }: PageProps) {
       try {
         setLoading(true);
         const res = await fetch('/api/menu');
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          const found = data.find((cat: MenuCategory) => cat.id === categoryId);
+        if (res.ok) {
+          const data = await res.json();
+          const mode = data.mode || 'interactive';
+          setMenuMode(mode);
+          setPdfUrl(data.pdfUrl || '');
+          setPdfName(data.pdfName || '');
+          setMarkdownFr(data.markdownFr || '');
+          setMarkdownEn(data.markdownEn || '');
+          
+          const categories = Array.isArray(data) ? data : (data.categories || []);
+          const found = categories.find((cat: MenuCategory) => cat.id === categoryId);
           if (found) {
             setMenu(found);
           }
@@ -314,6 +328,66 @@ export default function MenuPage({ params }: PageProps) {
         {loading ? (
           <div className="h-[60vh] flex items-center justify-center">
             <div className="w-12 h-12 border-2 border-akta-gold border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : (menuMode === 'pdf' && pdfUrl) ? (
+          <div className="space-y-12 text-center max-w-4xl mx-auto">
+            <div className="bg-akta-forest-medium/10 border border-akta-gold/10 p-8 md:p-12 rounded-sm space-y-8">
+              <div className="max-w-2xl mx-auto space-y-4">
+                <svg viewBox="0 0 24 24" width="48" height="48" stroke="var(--akta-gold)" strokeWidth="1" fill="none" strokeLinecap="round" strokeLinejoin="round" className="mx-auto opacity-70">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <h1 className="font-serif text-4xl text-akta-gold tracking-wide">
+                  {lang === 'fr' ? 'Notre Carte' : 'Our Menu'}
+                </h1>
+                <p className="text-sm font-light text-akta-beige-dark tracking-wide leading-relaxed">
+                  {lang === 'fr' 
+                    ? 'Notre carte est disponible au téléchargement et à la consultation.' 
+                    : 'Our menu is available for download and online viewing.'}
+                </p>
+                
+                <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4">
+                  <a
+                    href={pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-akta-gold text-akta-obsidian hover:bg-akta-gold-light px-8 py-4 text-xs font-bold uppercase tracking-[0.25em] transition-colors inline-block"
+                  >
+                    {lang === 'fr' ? 'Consulter la Carte' : 'View Menu'}
+                  </a>
+                  <a
+                    href={pdfUrl}
+                    download={pdfName || 'menu'}
+                    className="border border-akta-gold/30 text-akta-gold hover:border-akta-gold hover:bg-akta-gold/5 px-8 py-4 text-xs font-bold uppercase tracking-[0.25em] transition-colors inline-block"
+                  >
+                    {lang === 'fr' ? 'Télécharger (PDF/Word)' : 'Download (PDF/Word)'}
+                  </a>
+                </div>
+              </div>
+
+              {/* Inline PDF Preview iframe only if it's a PDF */}
+              {pdfUrl.toLowerCase().endsWith('.pdf') && (
+                <div className="mt-12 border border-akta-gold/10 bg-akta-obsidian aspect-[3/4] w-full max-w-2xl mx-auto overflow-hidden relative shadow-2xl">
+                  <iframe
+                    src={`${pdfUrl}#toolbar=0&navpanes=0`}
+                    className="w-full h-full border-none opacity-90 hover:opacity-100 transition-opacity duration-300"
+                    title="Äkta Menu PDF"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        ) : menuMode === 'markdown' ? (
+          <div className="max-w-2xl mx-auto bg-akta-forest-medium/10 border border-akta-gold/15 p-8 md:p-16 rounded-sm relative overflow-hidden shadow-2xl">
+            <div 
+              className="prose prose-invert max-w-none text-left tracking-wide leading-relaxed font-sans"
+              dangerouslySetInnerHTML={{ 
+                __html: parseMarkdownToHtml(lang === 'fr' ? markdownFr : markdownEn) 
+              }} 
+            />
           </div>
         ) : !menu ? (
           <div className="h-[60vh] flex flex-col items-center justify-center gap-4 text-center">
