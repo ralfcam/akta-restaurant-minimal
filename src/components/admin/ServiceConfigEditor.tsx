@@ -30,9 +30,9 @@ export default function ServiceConfigEditor({
   children
 }: ServiceConfigEditorProps) {
   return (
-    <div className={`bg-[var(--akta-forest)]/20 border ${config.isOpen ? 'border-[var(--akta-gold)]/30' : 'border-[var(--akta-gold)]/5 opacity-60'} p-6 rounded-sm`}>
+    <div className={`bg-[var(--akta-forest)]/20 border ${config.isOpen ? 'border-[var(--akta-gold)]/30' : 'border-[var(--akta-gold)]/5 opacity-60'} p-4 md:p-6 rounded-sm`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl text-[var(--akta-gold-light)] uppercase tracking-wider">{title}</h3>
+        <h3 className="text-lg md:text-xl text-[var(--akta-gold-light)] uppercase tracking-wider">{title}</h3>
         <label className="flex items-center gap-2 cursor-pointer">
           <input 
             type="checkbox" 
@@ -45,36 +45,36 @@ export default function ServiceConfigEditor({
       </div>
 
       {config.isOpen && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-[var(--akta-gold)]/10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 pt-4 border-t border-[var(--akta-gold)]/10">
           <div className="space-y-4">
             <h4 className="text-xs uppercase tracking-widest text-[var(--akta-gold)]/60 border-b border-[var(--akta-gold)]/10 pb-2">Horaires & Créneaux</h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-2 md:gap-4">
               <div>
-                <label className="text-[10px] uppercase text-[var(--akta-gold)]/60 block mb-1">Première Arrivée</label>
+                <label className="text-[9px] md:text-[10px] uppercase text-[var(--akta-gold)]/60 block mb-1">Première</label>
                 <input 
                   type="time" 
                   value={config.firstArrivalTime} 
                   onChange={e => onChange('firstArrivalTime', e.target.value)} 
-                  className="w-full bg-[var(--akta-obsidian)] border border-[var(--akta-gold)]/20 p-2 text-sm text-[var(--akta-beige)] font-mono focus:border-[var(--akta-gold)]" 
+                  className="w-full bg-[var(--akta-obsidian)] border border-[var(--akta-gold)]/20 p-1.5 md:p-2 text-xs md:text-sm text-[var(--akta-beige)] font-mono focus:border-[var(--akta-gold)] focus:outline-none" 
                 />
               </div>
               <div>
-                <label className="text-[10px] uppercase text-[var(--akta-gold)]/60 block mb-1">Dernière Arrivée</label>
+                <label className="text-[9px] md:text-[10px] uppercase text-[var(--akta-gold)]/60 block mb-1">Dernière</label>
                 <input 
                   type="time" 
                   value={config.lastArrivalTime} 
                   onChange={e => onChange('lastArrivalTime', e.target.value)} 
-                  className="w-full bg-[var(--akta-obsidian)] border border-[var(--akta-gold)]/20 p-2 text-sm text-[var(--akta-beige)] font-mono focus:border-[var(--akta-gold)]" 
+                  className="w-full bg-[var(--akta-obsidian)] border border-[var(--akta-gold)]/20 p-1.5 md:p-2 text-xs md:text-sm text-[var(--akta-beige)] font-mono focus:border-[var(--akta-gold)] focus:outline-none" 
                 />
               </div>
               <div>
-                <label className="text-[10px] uppercase text-[var(--akta-gold)]/60 block mb-1">Intervalle (min)</label>
+                <label className="text-[9px] md:text-[10px] uppercase text-[var(--akta-gold)]/60 block mb-1">Intervalle</label>
                 <input 
                   type="number" 
                   step="15" 
                   value={config.slotIntervalMinutes} 
                   onChange={e => onChange('slotIntervalMinutes', parseInt(e.target.value))} 
-                  className="w-full bg-[var(--akta-obsidian)] border border-[var(--akta-gold)]/20 p-2 text-sm text-[var(--akta-beige)] focus:border-[var(--akta-gold)]" 
+                  className="w-full bg-[var(--akta-obsidian)] border border-[var(--akta-gold)]/20 p-1.5 md:p-2 text-xs md:text-sm text-[var(--akta-beige)] focus:border-[var(--akta-gold)] focus:outline-none" 
                 />
               </div>
             </div>

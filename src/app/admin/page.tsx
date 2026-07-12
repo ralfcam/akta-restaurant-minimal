@@ -496,36 +496,45 @@ export default function AdminConsole() {
     <div className="min-h-screen bg-[var(--akta-obsidian)] text-[var(--akta-beige)] selection:bg-[var(--akta-gold)] selection:text-[var(--akta-obsidian)] font-sans pb-32">
 
       {/* Top Navbar */}
-      <div className="sticky top-0 z-50 bg-[var(--akta-obsidian)] border-b border-[var(--akta-gold)]/10 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-4">
-          <a href="/" className="text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)] transition-colors" title="Retour au site">
-            <BackIcon />
-          </a>
-          <span className="text-lg text-[var(--akta-gold-light)] font-light tracking-widest uppercase">Äkta Admin</span>
+      <div className="sticky top-0 z-50 bg-[var(--akta-obsidian)] border-b border-[var(--akta-gold)]/10 px-4 py-3 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <a href="/" className="text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)] transition-colors" title="Retour au site">
+              <BackIcon />
+            </a>
+            <span className="text-base text-[var(--akta-gold-light)] font-light tracking-widest uppercase">Äkta Admin</span>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="md:hidden text-[9px] text-[var(--akta-gold)]/60 hover:text-red-400 uppercase tracking-widest border border-[var(--akta-gold)]/20 px-2 py-1 rounded-sm transition-all"
+          >
+            Déconnexion
+          </button>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 md:mx-0 md:px-0">
           <button
             onClick={() => setMainTab('bookings')}
-            className={`text-xs uppercase tracking-[0.1em] px-4 py-2 border whitespace-nowrap ${mainTab === 'bookings' ? 'border-[var(--akta-gold)] text-[var(--akta-gold)]' : 'border-transparent text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)]'}`}
+            className={`text-[10px] md:text-xs uppercase tracking-[0.1em] px-3 py-1.5 border whitespace-nowrap ${mainTab === 'bookings' ? 'border-[var(--akta-gold)] text-[var(--akta-gold)]' : 'border-transparent text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)]'}`}
           >
             Réservations
           </button>
           <button
             onClick={() => setMainTab('menu')}
-            className={`text-xs uppercase tracking-[0.1em] px-4 py-2 border whitespace-nowrap ${mainTab === 'menu' ? 'border-[var(--akta-gold)] text-[var(--akta-gold)]' : 'border-transparent text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)]'}`}
+            className={`text-[10px] md:text-xs uppercase tracking-[0.1em] px-3 py-1.5 border whitespace-nowrap ${mainTab === 'menu' ? 'border-[var(--akta-gold)] text-[var(--akta-gold)]' : 'border-transparent text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)]'}`}
           >
             Carte & Menus
           </button>
           <button
             onClick={() => setMainTab('configuration')}
-            className={`text-xs uppercase tracking-[0.1em] px-4 py-2 border whitespace-nowrap ${mainTab === 'configuration' ? 'border-[var(--akta-gold)] text-[var(--akta-gold)]' : 'border-transparent text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)]'}`}
+            className={`text-[10px] md:text-xs uppercase tracking-[0.1em] px-3 py-1.5 border whitespace-nowrap ${mainTab === 'configuration' ? 'border-[var(--akta-gold)] text-[var(--akta-gold)]' : 'border-transparent text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)]'}`}
           >
             Configuration & Calendrier
           </button>
           <button
             onClick={() => setMainTab('settings')}
-            className={`text-xs uppercase tracking-[0.1em] px-4 py-2 border whitespace-nowrap ${mainTab === 'settings' ? 'border-[var(--akta-gold)] text-[var(--akta-gold)]' : 'border-transparent text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)]'}`}
+            className={`text-[10px] md:text-xs uppercase tracking-[0.1em] px-3 py-1.5 border whitespace-nowrap ${mainTab === 'settings' ? 'border-[var(--akta-gold)] text-[var(--akta-gold)]' : 'border-transparent text-[var(--akta-gold)]/50 hover:text-[var(--akta-gold)]'}`}
           >
             Paramètres
           </button>
@@ -533,13 +542,13 @@ export default function AdminConsole() {
 
         <button
           onClick={handleLogout}
-          className="text-[10px] text-[var(--akta-gold)]/60 hover:text-red-400 uppercase tracking-widest border border-transparent hover:border-red-900/30 px-3 py-1.5 transition-all"
+          className="hidden md:block text-[10px] text-[var(--akta-gold)]/60 hover:text-red-400 uppercase tracking-widest border border-transparent hover:border-red-900/30 px-3 py-1.5 transition-all"
         >
           Déconnexion
         </button>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 mt-12">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 mt-8 md:mt-12">
         {mainTab === 'settings' ? (
           <AdminSettingsTab token={session.access_token} />
         ) : mainTab === 'configuration' ? (
@@ -594,73 +603,140 @@ export default function AdminConsole() {
             ) : bookings.length === 0 ? (
               <p className="text-[var(--akta-gold)]/60 text-sm">Aucune réservation trouvée.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-[var(--akta-gold)]/20 text-[10px] uppercase tracking-widest text-[var(--akta-gold)]/60">
-                      <th className="py-4 px-4 font-normal">Date & Heure</th>
-                      <th className="py-4 px-4 font-normal">Client</th>
-                      <th className="py-4 px-4 font-normal">Contact</th>
-                      <th className="py-4 px-4 font-normal">Personnes</th>
-                      <th className="py-4 px-4 font-normal">Notes</th>
-                      <th className="py-4 px-4 font-normal">Statut & Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bookings.map(b => (
-                      <tr key={b.id} className="border-b border-[var(--akta-gold)]/10 hover:bg-[var(--akta-forest)]/20 transition-colors">
-                        <td className="py-4 px-4 whitespace-nowrap text-sm text-[var(--akta-gold-light)] font-mono">
-                          {b.booking_date} <br />
-                          <span className="text-[var(--akta-beige-dark)]">{b.booking_time}</span>
-                        </td>
-                        <td className="py-4 px-4 whitespace-nowrap text-sm">{b.client_name}</td>
-                        <td className="py-4 px-4 whitespace-nowrap text-sm text-[var(--akta-beige-dark)]">
-                          {b.client_phone}<br />{b.client_email}
-                        </td>
-                        <td className="py-4 px-4 whitespace-nowrap text-sm font-bold text-emerald-400">{b.guests}</td>
-                        <td className="py-4 px-4 text-xs text-[var(--akta-beige-dark)] max-w-xs truncate">{b.notes || '-'}</td>
-                        <td className="py-4 px-4 whitespace-nowrap text-sm">
-                          <div className="flex items-center gap-3">
-                            {/* Status badges */}
-                            {(!b.status || b.status === 'pending') && (
-                              <span className="px-2 py-0.5 text-[9px] uppercase font-mono tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-sm">
-                                En attente
-                              </span>
-                            )}
-                            {b.status === 'confirmed' && (
-                              <span className="px-2 py-0.5 text-[9px] uppercase font-mono tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-sm">
-                                Confirmé
-                              </span>
-                            )}
-                            {b.status === 'cancelled' && (
-                              <span className="px-2 py-0.5 text-[9px] uppercase font-mono tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 rounded-sm">
-                                Annulé
-                              </span>
-                            )}
-
-                            {/* Action buttons */}
-                            {(!b.status || b.status === 'pending') && (
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => handleUpdateStatus(b.id, b.booking_date, 'approve')}
-                                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-mono uppercase tracking-wider rounded-sm transition-colors cursor-pointer"
-                                >
-                                  Approuver
-                                </button>
-                                <button
-                                  onClick={() => handleUpdateStatus(b.id, b.booking_date, 'reject')}
-                                  className="px-2 py-1 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-900/30 text-[9px] font-mono uppercase tracking-wider rounded-sm transition-colors cursor-pointer"
-                                >
-                                  Refuser
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </td>
+              <div className="space-y-4">
+                {/* Desktop View Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-[var(--akta-gold)]/20 text-[10px] uppercase tracking-widest text-[var(--akta-gold)]/60">
+                        <th className="py-4 px-4 font-normal">Date & Heure</th>
+                        <th className="py-4 px-4 font-normal">Client</th>
+                        <th className="py-4 px-4 font-normal">Contact</th>
+                        <th className="py-4 px-4 font-normal">Personnes</th>
+                        <th className="py-4 px-4 font-normal">Notes</th>
+                        <th className="py-4 px-4 font-normal">Statut & Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {bookings.map(b => (
+                        <tr key={b.id} className="border-b border-[var(--akta-gold)]/10 hover:bg-[var(--akta-forest)]/20 transition-colors">
+                          <td className="py-4 px-4 whitespace-nowrap text-sm text-[var(--akta-gold-light)] font-mono">
+                            {b.booking_date} <br />
+                            <span className="text-[var(--akta-beige-dark)]">{b.booking_time}</span>
+                          </td>
+                          <td className="py-4 px-4 whitespace-nowrap text-sm">{b.client_name}</td>
+                          <td className="py-4 px-4 whitespace-nowrap text-sm text-[var(--akta-beige-dark)]">
+                            {b.client_phone}<br />{b.client_email}
+                          </td>
+                          <td className="py-4 px-4 whitespace-nowrap text-sm font-bold text-emerald-400">{b.guests}</td>
+                          <td className="py-4 px-4 text-xs text-[var(--akta-beige-dark)] max-w-xs truncate">{b.notes || '-'}</td>
+                          <td className="py-4 px-4 whitespace-nowrap text-sm">
+                            <div className="flex items-center gap-3">
+                              {/* Status badges */}
+                              {(!b.status || b.status === 'pending') && (
+                                <span className="px-2 py-0.5 text-[9px] uppercase font-mono tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-sm">
+                                  En attente
+                                </span>
+                              )}
+                              {b.status === 'confirmed' && (
+                                <span className="px-2 py-0.5 text-[9px] uppercase font-mono tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-sm">
+                                  Confirmé
+                                </span>
+                              )}
+                              {b.status === 'cancelled' && (
+                                <span className="px-2 py-0.5 text-[9px] uppercase font-mono tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 rounded-sm">
+                                  Annulé
+                                </span>
+                              )}
+
+                              {/* Action buttons */}
+                              {(!b.status || b.status === 'pending') && (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleUpdateStatus(b.id, b.booking_date, 'approve')}
+                                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-mono uppercase tracking-wider rounded-sm transition-colors cursor-pointer"
+                                  >
+                                    Approuver
+                                  </button>
+                                  <button
+                                    onClick={() => handleUpdateStatus(b.id, b.booking_date, 'reject')}
+                                    className="px-2 py-1 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-900/30 text-[9px] font-mono uppercase tracking-wider rounded-sm transition-colors cursor-pointer"
+                                  >
+                                    Refuser
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View Cards */}
+                <div className="grid grid-cols-1 gap-4 md:hidden">
+                  {bookings.map(b => (
+                    <div key={b.id} className="bg-[var(--akta-forest)]/10 border border-[var(--akta-gold)]/10 p-4 rounded-sm space-y-3">
+                      <div className="flex justify-between items-start border-b border-[var(--akta-gold)]/10 pb-2">
+                        <div>
+                          <span className="text-xs text-[var(--akta-gold-light)] font-mono font-bold">{b.booking_date}</span>
+                          <span className="text-xs text-[var(--akta-beige-dark)] font-mono ml-2">({b.booking_time})</span>
+                        </div>
+                        <span className="text-xs font-bold text-emerald-400">{b.guests} pers.</span>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <div className="text-sm font-semibold">{b.client_name}</div>
+                        <div className="text-xs text-[var(--akta-beige-dark)] font-mono">{b.client_phone}</div>
+                        <div className="text-xs text-[var(--akta-beige-dark)] font-mono">{b.client_email}</div>
+                      </div>
+
+                      {b.notes && (
+                        <div className="text-xs bg-[var(--akta-obsidian)] p-2 rounded-sm border border-[var(--akta-gold)]/5 text-[var(--akta-beige-dark)] italic">
+                          "{b.notes}"
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-2 border-t border-[var(--akta-gold)]/10">
+                        <div>
+                          {(!b.status || b.status === 'pending') && (
+                            <span className="px-2 py-0.5 text-[9px] uppercase font-mono tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-sm">
+                              En attente
+                            </span>
+                          )}
+                          {b.status === 'confirmed' && (
+                            <span className="px-2 py-0.5 text-[9px] uppercase font-mono tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-sm">
+                              Confirmé
+                            </span>
+                          )}
+                          {b.status === 'cancelled' && (
+                            <span className="px-2 py-0.5 text-[9px] uppercase font-mono tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 rounded-sm">
+                              Annulé
+                            </span>
+                          )}
+                        </div>
+
+                        {(!b.status || b.status === 'pending') && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleUpdateStatus(b.id, b.booking_date, 'approve')}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-mono uppercase tracking-wider rounded-sm transition-colors cursor-pointer"
+                            >
+                              Approuver
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(b.id, b.booking_date, 'reject')}
+                              className="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-900/30 text-[10px] font-mono uppercase tracking-wider rounded-sm transition-colors cursor-pointer"
+                            >
+                              Refuser
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -917,7 +993,7 @@ export default function AdminConsole() {
                               >
                                 <button
                                   onClick={() => handleDeleteItem(activeCategory.id, sIdx, iIdx)}
-                                  className="absolute top-4 right-4 text-red-500/50 hover:text-red-400 p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="absolute top-4 right-4 text-red-500/50 hover:text-red-400 p-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                                   title="Supprimer cet article"
                                 >
                                   <TrashIcon />

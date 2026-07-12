@@ -176,14 +176,14 @@ export default function AdminConfigurationTab({ token }: { token: string }) {
           </p>
         </div>
         
-        <div className="bg-[var(--akta-forest)]/20 border border-[var(--akta-gold)]/10 p-6 rounded-sm space-y-6">
-          <div className="flex flex-col sm:flex-row items-center gap-4 border-b border-[var(--akta-gold)]/10 pb-4">
+        <div className="bg-[var(--akta-forest)]/20 border border-[var(--akta-gold)]/10 p-4 md:p-6 rounded-sm space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-b border-[var(--akta-gold)]/10 pb-4">
             <label className="text-[10px] uppercase tracking-widest text-[var(--akta-gold)]/60 block">Sélectionnez une date</label>
             <input 
               type="date" 
               value={selectedDate}
               onChange={e => setSelectedDate(e.target.value)}
-              className="bg-[var(--akta-obsidian)] border border-[var(--akta-gold)]/20 p-3 text-sm text-[var(--akta-beige)] focus:outline-none focus:border-[var(--akta-gold)] font-mono"
+              className="bg-[var(--akta-obsidian)] border border-[var(--akta-gold)]/20 p-3 text-sm text-[var(--akta-beige)] focus:outline-none focus:border-[var(--akta-gold)] font-mono w-full sm:w-auto"
             />
           </div>
 
@@ -200,13 +200,13 @@ export default function AdminConfigurationTab({ token }: { token: string }) {
                   onAddTable={addOverrideTable}
                   onRemoveTable={removeOverrideTable}
                 >
-                  <div className="flex gap-2 pt-6 mt-4 border-t border-[var(--akta-gold)]/10">
-                    <button onClick={saveOverride} className="bg-[var(--akta-gold)] hover:bg-[var(--akta-gold-light)] text-[var(--akta-obsidian)] px-4 py-2 text-xs font-bold uppercase tracking-wider">Enregistrer la dérogation</button>
-                    <button onClick={deleteOverride} className="border border-red-500/50 text-red-400 px-4 py-2 text-xs uppercase tracking-wider hover:bg-red-500/10 transition-colors">Annuler la dérogation</button>
+                  <div className="flex flex-col sm:flex-row gap-3 pt-6 mt-4 border-t border-[var(--akta-gold)]/10">
+                    <button onClick={saveOverride} className="bg-[var(--akta-gold)] hover:bg-[var(--akta-gold-light)] text-[var(--akta-obsidian)] px-4 py-2.5 text-xs font-bold uppercase tracking-wider w-full sm:w-auto text-center">Enregistrer la dérogation</button>
+                    <button onClick={deleteOverride} className="border border-red-500/50 text-red-400 px-4 py-2.5 text-xs uppercase tracking-wider hover:bg-red-500/10 transition-colors w-full sm:w-auto text-center">Annuler la dérogation</button>
                   </div>
                 </ServiceConfigEditor>
               ) : (
-                <button onClick={createEmptyOverride} className="border border-[var(--akta-gold)]/30 text-[var(--akta-gold)] hover:bg-[var(--akta-gold)] hover:text-[var(--akta-obsidian)] px-4 py-2 text-xs uppercase tracking-widest transition-colors">
+                <button onClick={createEmptyOverride} className="w-full sm:w-auto border border-[var(--akta-gold)]/30 text-[var(--akta-gold)] hover:bg-[var(--akta-gold)] hover:text-[var(--akta-obsidian)] px-4 py-2.5 text-xs uppercase tracking-widest transition-colors text-center">
                   + Créer une dérogation pour le {selectedDate}
                 </button>
               )}
@@ -217,9 +217,9 @@ export default function AdminConfigurationTab({ token }: { token: string }) {
 
       {/* SECTION: WEEKLY TEMPLATES (CONFIGURATION) */}
       <section className="space-y-6">
-        <div className="flex justify-between items-center border-b border-[var(--akta-gold)]/10 pb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[var(--akta-gold)]/10 pb-4">
           <div>
-            <h2 className="text-3xl font-light text-[var(--akta-gold-light)]">Configuration Hebdomadaire</h2>
+            <h2 className="text-2xl md:text-3xl font-light text-[var(--akta-gold-light)]">Configuration Hebdomadaire</h2>
             <p className="text-xs text-[var(--akta-beige-dark)] mt-2">
               Définissez ici les horaires et la capacité standards de votre restaurant pour chaque jour de la semaine.
             </p>
@@ -227,7 +227,7 @@ export default function AdminConfigurationTab({ token }: { token: string }) {
           <button 
             onClick={handleSaveTemplates} 
             disabled={savingTemplates}
-            className="bg-[var(--akta-gold)] hover:bg-[var(--akta-gold-light)] text-[var(--akta-obsidian)] px-6 py-2 text-xs font-bold uppercase tracking-[0.2em] transition-all whitespace-nowrap"
+            className="w-full sm:w-auto bg-[var(--akta-gold)] hover:bg-[var(--akta-gold-light)] text-[var(--akta-obsidian)] px-6 py-2.5 text-xs font-bold uppercase tracking-[0.2em] transition-all whitespace-nowrap text-center"
           >
             {savingTemplates ? 'Sauvegarde...' : 'Sauvegarder tout'}
           </button>
