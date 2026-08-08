@@ -71,7 +71,7 @@ describe('calculateAvailability', () => {
       firstArrivalTime: '18:00',
       lastArrivalTime: '21:00',
       slotIntervalMinutes: 30,
-      tables: [{ tableLabel: 'T2-1', tableCapacity: 2, isActive: true, isBlocked: false }]
+      tables: [{ tableLabel: 'T2-1', tableCapacity: 2, tableCount: 1, isActive: true, isBlocked: false }] as any
     });
 
     const res = await calculateAvailability('2026-07-05', 'Dinner', 2);
@@ -216,7 +216,7 @@ describe('calculateAvailability', () => {
 
   it('A blocked table reduces availability', async () => {
     vi.mocked(bookingKv.getWeeklyTemplates).mockResolvedValue([
-      { weekday: 5, serviceName: "Dinner", isOpen: true, firstArrivalTime: "18:00", lastArrivalTime: "21:30", slotIntervalMinutes: 30, tables: [
+      { weekday: 5, serviceName: "Dinner", isOpen: true, firstArrivalTime: "18:00", lastArrivalTime: "21:30", slotIntervalMinutes: 15, tables: [
           { tableCapacity: 2, tableCount: 1 }
       ]}
     ] as any);
@@ -233,6 +233,102 @@ describe('calculateAvailability', () => {
 
     const res = await calculateAvailability('2026-07-03', 'Dinner', 2);
     expect(res.isBookable).toBe(false);
+  });
+
+  it('Generates 15-minute time slots dynamically from configured booking window', async () => {
+    vi.mocked(bookingKv.getWeeklyTemplates).mockResolvedValue([
+      { weekday: 5, serviceName: "Dinner", isOpen: true, firstArrivalTime: "20:00", lastArrivalTime: "20:45", slotIntervalMinutes: 15, tables: [
+          { tableCapacity: 2, tableCount: 5 }
+      ]}
+    ] as any);
+
+    const res = await calculateAvailability('2026-07-03', 'Dinner', 2);
+    expect(res.isBookable).toBe(true);
+    expect(res.slots?.map(s => s.time)).toEqual(['20:00', '20:15', '20:30', '20:45']);
+  });
+
+  it('Marks a time slot as unavailable after 2 counted reservations for that slot', async () => {
+    vi.mocked(bookingKv.getWeeklyTemplates).mockResolvedValue([
+      { weekday: 5, serviceName: "Dinner", isOpen: true, firstArrivalTime: "20:00", lastArrivalTime: "20:45", slotIntervalMinutes: 15, tables: [
+          { tableCapacity: 2, tableCount: 5 }
+      ]}
+    ] as any);
+
+    vi.mocked(bookingKv.getBookingsByDate).mockResolvedValue([
+      {
+        id: 'b1',
+        client_name: 'Client 1',
+        client_email: 'c1@test.com',
+        client_phone: '123',
+        booking_date: '2026-07-03',
+        booking_time: '20:15',
+        guests: 2,
+        status: 'confirmed',
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'b2',
+        client_name: 'Client 2',
+        client_email: 'c2@test.com',
+        client_phone: '456',
+        booking_date: '2026-07-03',
+        booking_time: '20:15',
+        guests: 2,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      }
+    ]);
+
+    const res = await calculateAvailability('2026-07-03', 'Dinner', 2);
+    expect(res.isBookable).toBe(true);
+    const slot2015 = res.slots?.find(s => s.time === '20:15');
+    const slot2000 = res.slots?.find(s => s.time === '20:00');
+
+    expect(slot2000?.available).toBe(true);
+    expect(slot2015?.available).toBe(false);
+    expect(slot2015?.count).toBe(2);
+    expect(res.availableSlots).not.toContain('20:15');
+    expect(res.availableSlots).toContain('20:00');
+  });
+
+  it('Re-enables a slot when a reservation is cancelled or rejected', async () => {
+    vi.mocked(bookingKv.getWeeklyTemplates).mockResolvedValue([
+      { weekday: 5, serviceName: "Dinner", isOpen: true, firstArrivalTime: "20:00", lastArrivalTime: "20:45", slotIntervalMinutes: 15, tables: [
+          { tableCapacity: 2, tableCount: 5 }
+      ]}
+    ] as any);
+
+    vi.mocked(bookingKv.getBookingsByDate).mockResolvedValue([
+      {
+        id: 'b1',
+        client_name: 'Client 1',
+        client_email: 'c1@test.com',
+        client_phone: '123',
+        booking_date: '2026-07-03',
+        booking_time: '20:15',
+        guests: 2,
+        status: 'confirmed',
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'b2',
+        client_name: 'Client 2',
+        client_email: 'c2@test.com',
+        client_phone: '456',
+        booking_date: '2026-07-03',
+        booking_time: '20:15',
+        guests: 2,
+        status: 'cancelled_by_restaurant', // Cancelled!
+        created_at: new Date().toISOString()
+      }
+    ]);
+
+    const res = await calculateAvailability('2026-07-03', 'Dinner', 2);
+    const slot2015 = res.slots?.find(s => s.time === '20:15');
+
+    expect(slot2015?.available).toBe(true);
+    expect(slot2015?.count).toBe(1);
+    expect(res.availableSlots).toContain('20:15');
   });
 
 });

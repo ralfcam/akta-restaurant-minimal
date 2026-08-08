@@ -9,6 +9,15 @@ export interface RestaurantSettings {
   allowLargerTableAssignment: boolean;
   maximumCapacityWaste: number;
   tableBlockedForWholeService: boolean;
+  maxReservationsPerSlot?: number;
+}
+
+export interface SlotAvailability {
+  time: string;
+  available: boolean;
+  count: number;
+  maxCapacity: number;
+  reason?: string;
 }
 
 export interface WeeklyTableTemplate {

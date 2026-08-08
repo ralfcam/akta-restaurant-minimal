@@ -17,19 +17,20 @@ const DEFAULT_SETTINGS: RestaurantSettings = {
   phoneOnlyMinGuests: 7,
   allowLargerTableAssignment: false,
   maximumCapacityWaste: 1,
-  tableBlockedForWholeService: true
+  tableBlockedForWholeService: true,
+  maxReservationsPerSlot: 2
 };
 
 const DEFAULT_WEEKLY_TEMPLATES: WeeklyServiceTemplate[] = [
-  { weekday: 0, serviceName: "Dinner", isOpen: false, firstArrivalTime: "18:00", lastArrivalTime: "21:30", slotIntervalMinutes: 30, tables: [] },
-  { weekday: 1, serviceName: "Dinner", isOpen: false, firstArrivalTime: "18:00", lastArrivalTime: "21:30", slotIntervalMinutes: 30, tables: [] },
+  { weekday: 0, serviceName: "Dinner", isOpen: false, firstArrivalTime: "18:00", lastArrivalTime: "21:30", slotIntervalMinutes: 15, tables: [] },
+  { weekday: 1, serviceName: "Dinner", isOpen: false, firstArrivalTime: "18:00", lastArrivalTime: "21:30", slotIntervalMinutes: 15, tables: [] },
   ...[2,3,4,5,6].map(day => ({
     weekday: day,
     serviceName: "Dinner",
     isOpen: true,
     firstArrivalTime: "18:00",
     lastArrivalTime: "21:30",
-    slotIntervalMinutes: 30,
+    slotIntervalMinutes: 15,
     tables: [
       { tableCapacity: 2, tableCount: 5 },
       { tableCapacity: 4, tableCount: 3 },

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, addDays, isSunday, isMonday, parseISO, isValid } from 'date-fns';
+import { format, addDays, isSunday, isMonday, parseISO } from 'date-fns';
 
 const XIcon = ({ size = 20 }: { size?: number }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -11,8 +11,22 @@ const XIcon = ({ size = 20 }: { size?: number }) => (
   </svg>
 );
 
-const TIME_SLOTS = ["12:00", "12:30", "13:00", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00"];
+const RedCrossIcon = ({ size = 12 }: { size?: number }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 shrink-0">
+    <line x1="18" y1="6" x2="6" y2="18"></line>
+    <line x1="6" y1="6" x2="18" y2="18"></line>
+  </svg>
+);
+
 const MAX_GUESTS = 10;
+
+interface SlotItem {
+  time: string;
+  available: boolean;
+  count: number;
+  maxCapacity: number;
+  reason?: string;
+}
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -37,9 +51,11 @@ export default function BookingModal({ isOpen, onClose, lang }: BookingModalProp
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   
-  // Date validation rules - we remove hardcoded Sunday/Monday block here 
-  // because overrides might open them. We just let backend decide.
-  
+  // Dynamic slot states
+  const [slots, setSlots] = useState<SlotItem[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
+  const [slotsError, setSlotsError] = useState<string>('');
+
   useEffect(() => {
     if (isOpen) {
       setStep(1);
@@ -47,13 +63,66 @@ export default function BookingModal({ isOpen, onClose, lang }: BookingModalProp
       setMessage('');
       
       let defaultDate = new Date();
-      // Only default away from today if it's sun/mon for convenience, but they can select it and backend checks.
       while (isSunday(defaultDate) || isMonday(defaultDate)) {
         defaultDate = addDays(defaultDate, 1);
       }
-      setFormData(prev => ({ ...prev, date: format(defaultDate, 'yyyy-MM-dd') }));
+      setFormData(prev => ({ ...prev, date: format(defaultDate, 'yyyy-MM-dd'), time: '' }));
     }
   }, [isOpen]);
+
+  // Fetch slots whenever date or guest count changes
+  useEffect(() => {
+    if (!isOpen || !formData.date) return;
+    let isMounted = true;
+    
+    const fetchSlots = async () => {
+      setLoadingSlots(true);
+      setSlotsError('');
+      try {
+        const res = await fetch(`/api/bookings/check?date=${formData.date}&guests=${formData.guests}`);
+        const data = await res.json();
+        
+        if (isMounted) {
+          if (data.success && data.availability) {
+            const fetchedSlots: SlotItem[] = data.availability.slots || [];
+            setSlots(fetchedSlots);
+            
+            if (data.availability.isClosed) {
+              setSlotsError(lang === 'fr' ? 'Nous sommes fermés à cette date.' : 'We are closed on this date.');
+            } else if (data.availability.statusType === 'phone_only') {
+              setSlotsError(lang === 'fr' 
+                ? `Pour les réservations de ${formData.guests} personnes ou plus, veuillez nous appeler directement.`
+                : `For reservations of ${formData.guests} guests or more, please call us directly.`);
+            } else if (!data.availability.isBookable && fetchedSlots.length === 0) {
+              setSlotsError(lang === 'fr' 
+                ? "Désolé, nous n'avons plus de disponibilité pour cette date."
+                : 'Sorry, we do not have availability for this date.');
+            }
+
+            if (formData.time) {
+              const selSlot = fetchedSlots.find(s => s.time === formData.time);
+              if (!selSlot || !selSlot.available) {
+                setFormData(prev => ({ ...prev, time: '' }));
+              }
+            }
+          } else {
+            setSlotsError(lang === 'fr' ? 'Erreur lors de la vérification.' : 'Error checking availability.');
+            setSlots([]);
+          }
+        }
+      } catch (err) {
+        if (isMounted) {
+          setSlotsError(lang === 'fr' ? 'Erreur de connexion.' : 'Connection error.');
+          setSlots([]);
+        }
+      } finally {
+        if (isMounted) setLoadingSlots(false);
+      }
+    };
+
+    fetchSlots();
+    return () => { isMounted = false; };
+  }, [isOpen, formData.date, formData.guests, lang]);
 
   const handleNextStep = async () => {
     if (step === 1) {
@@ -70,7 +139,7 @@ export default function BookingModal({ isOpen, onClose, lang }: BookingModalProp
         const data = await res.json();
         
         if (data.success && data.availability) {
-          const { isBookable, statusType, availableSlots, isClosed } = data.availability;
+          const { isBookable, statusType, availableSlots, isClosed, slots: currentSlots } = data.availability;
 
           if (isClosed) {
             setStatus('error');
@@ -96,11 +165,12 @@ export default function BookingModal({ isOpen, onClose, lang }: BookingModalProp
              return;
           }
 
-          if (!availableSlots.includes(formData.time)) {
+          const targetSlot = (currentSlots || []).find((s: SlotItem) => s.time === formData.time);
+          if (!targetSlot || !targetSlot.available || !availableSlots.includes(formData.time)) {
              setStatus('error');
              setMessage(lang === 'fr' 
-                ? "Désolé, ce créneau horaire n'est pas disponible ce jour-là."
-                : 'Sorry, this time slot is not available on this day.');
+                ? "Désolé, ce créneau horaire n'est plus disponible (complet ou fermé)."
+                : 'Sorry, this time slot is no longer available.');
              return;
           }
 
@@ -111,7 +181,7 @@ export default function BookingModal({ isOpen, onClose, lang }: BookingModalProp
         }
       } catch (err) {
         setStatus('error');
-        setMessage('Erreur de connexion.');
+        setMessage(lang === 'fr' ? 'Erreur de connexion.' : 'Connection error.');
       } finally {
         setChecking(false);
       }
@@ -222,7 +292,7 @@ export default function BookingModal({ isOpen, onClose, lang }: BookingModalProp
                             min={minDate}
                             value={formData.date}
                             onChange={e => {
-                              setFormData({...formData, date: e.target.value});
+                              setFormData({...formData, date: e.target.value, time: ''});
                               setStatus('idle');
                             }}
                             className="w-full bg-[var(--akta-forest)]/30 border border-[var(--akta-gold)]/20 p-3 rounded-none text-sm text-[var(--akta-beige)] focus:outline-none focus:border-[var(--akta-gold)]"
@@ -235,7 +305,7 @@ export default function BookingModal({ isOpen, onClose, lang }: BookingModalProp
                           <select 
                             value={formData.guests}
                             onChange={e => {
-                              setFormData({...formData, guests: parseInt(e.target.value)});
+                              setFormData({...formData, guests: parseInt(e.target.value), time: ''});
                               setStatus('idle');
                             }}
                             className="w-full bg-[var(--akta-forest)]/30 border border-[var(--akta-gold)]/20 p-3 rounded-none text-sm text-[var(--akta-beige)] focus:outline-none focus:border-[var(--akta-gold)]"
@@ -258,28 +328,66 @@ export default function BookingModal({ isOpen, onClose, lang }: BookingModalProp
                       )}
 
                       <div>
-                        <label className="text-[10px] uppercase tracking-widest text-[var(--akta-gold)]/60 block mb-2">
-                          {lang === 'fr' ? 'Heure' : 'Time'}
-                        </label>
-                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                          {TIME_SLOTS.map(t => (
-                            <button
-                              type="button"
-                              key={t}
-                              onClick={() => {
-                                setFormData({...formData, time: t});
-                                setStatus('idle');
-                              }}
-                              className={`py-2 text-xs font-mono transition-all border rounded-none ${
-                                formData.time === t 
-                                  ? 'bg-[var(--akta-gold)] text-[var(--akta-obsidian)] border-[var(--akta-gold)] font-bold' 
-                                  : 'bg-transparent text-[var(--akta-beige)] border-[var(--akta-gold)]/20 hover:border-[var(--akta-gold)]/60'
-                              }`}
-                            >
-                              {t}
-                            </button>
-                          ))}
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="text-[10px] uppercase tracking-widest text-[var(--akta-gold)]/60 block">
+                            {lang === 'fr' ? 'Heure d\'arrivée (créneaux de 15 min)' : 'Arrival Time (15-min slots)'}
+                          </label>
+                          {loadingSlots && (
+                            <span className="text-[10px] text-[var(--akta-gold)]/60 animate-pulse font-mono">
+                              {lang === 'fr' ? 'Chargement...' : 'Loading...'}
+                            </span>
+                          )}
                         </div>
+
+                        {slotsError ? (
+                          <p className="text-xs text-amber-400/90 bg-amber-950/20 p-3 border border-amber-900/30 rounded-none font-mono">
+                            {slotsError}
+                          </p>
+                        ) : loadingSlots ? (
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                              <div key={i} className="h-10 bg-[var(--akta-forest)]/20 animate-pulse border border-[var(--akta-gold)]/10"></div>
+                            ))}
+                          </div>
+                        ) : slots.length === 0 ? (
+                          <p className="text-xs text-[var(--akta-gold)]/50 font-mono italic">
+                            {lang === 'fr' ? 'Aucun créneau disponible.' : 'No available slots.'}
+                          </p>
+                        ) : (
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
+                            {slots.map(s => {
+                              const isSelected = formData.time === s.time;
+                              const isAvailable = s.available;
+
+                              return (
+                                <button
+                                  type="button"
+                                  key={s.time}
+                                  disabled={!isAvailable}
+                                  onClick={() => {
+                                    if (isAvailable) {
+                                      setFormData({...formData, time: s.time});
+                                      setStatus('idle');
+                                    }
+                                  }}
+                                  title={!isAvailable ? (s.reason || (lang === 'fr' ? 'Créneau complet' : 'Slot full')) : undefined}
+                                  className={`py-2.5 px-2 text-xs font-mono transition-all border flex items-center justify-center gap-1.5 relative ${
+                                    isSelected
+                                      ? 'bg-[var(--akta-gold)] text-[var(--akta-obsidian)] border-[var(--akta-gold)] font-bold shadow-md'
+                                      : isAvailable
+                                        ? 'bg-transparent text-[var(--akta-beige)] border-[var(--akta-gold)]/20 hover:border-[var(--akta-gold)]/60 cursor-pointer'
+                                        : 'bg-red-950/20 text-red-400/50 border-red-900/30 cursor-not-allowed opacity-75 select-none'
+                                  }`}
+                                >
+                                  <span>{s.time}</span>
+                                  {!isAvailable && (
+                                    <RedCrossIcon size={12} />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
 
                       {status === 'error' && <p className="text-red-400 text-xs">{message}</p>}
@@ -287,8 +395,8 @@ export default function BookingModal({ isOpen, onClose, lang }: BookingModalProp
                       <button 
                         type="button"
                         onClick={handleNextStep}
-                        disabled={checking || !formData.time}
-                        className="w-full py-4 bg-[var(--akta-gold)] hover:bg-[var(--akta-gold-light)] disabled:opacity-40 text-[var(--akta-obsidian)] text-xs font-mono font-bold uppercase tracking-[0.2em] transition-all mt-4"
+                        disabled={checking || loadingSlots || !formData.time}
+                        className="w-full py-4 bg-[var(--akta-gold)] hover:bg-[var(--akta-gold-light)] disabled:opacity-40 text-[var(--akta-obsidian)] text-xs font-mono font-bold uppercase tracking-[0.2em] transition-all mt-4 cursor-pointer"
                       >
                         {checking 
                           ? (lang === 'fr' ? 'Vérification...' : 'Checking...') 
@@ -356,7 +464,7 @@ export default function BookingModal({ isOpen, onClose, lang }: BookingModalProp
                       <button 
                         type="submit" 
                         disabled={loading}
-                        className="w-full py-4 bg-[var(--akta-gold)] hover:bg-[var(--akta-gold-light)] disabled:opacity-40 text-[var(--akta-obsidian)] text-xs font-mono font-bold uppercase tracking-[0.2em] transition-all mt-4"
+                        className="w-full py-4 bg-[var(--akta-gold)] hover:bg-[var(--akta-gold-light)] disabled:opacity-40 text-[var(--akta-obsidian)] text-xs font-mono font-bold uppercase tracking-[0.2em] transition-all mt-4 cursor-pointer"
                       >
                         {loading 
                           ? (lang === 'fr' ? 'Confirmation...' : 'Confirming...') 

@@ -10,7 +10,8 @@ import {
   Reservation, 
   WeeklyServiceTemplate, 
   DateServiceOverride, 
-  RestaurantSettings 
+  RestaurantSettings,
+  SlotAvailability
 } from './types/booking';
 
 export type AvailabilityStatus = 
@@ -25,6 +26,7 @@ export interface AvailabilityResult {
   isBookable: boolean;
   statusType: AvailabilityStatus;
   availableSlots: string[];
+  slots?: SlotAvailability[];
   suggestedTable?: { label: string, capacity: number }; // internal
   reason?: string; // internal
   isClosed: boolean;
@@ -38,12 +40,14 @@ export async function calculateAvailability(
   partySize: number
 ): Promise<AvailabilityResult> {
   const settings = await getRestaurantSettings();
+  const maxReservationsPerSlot = settings.maxReservationsPerSlot ?? 2;
   
   if (partySize >= settings.phoneOnlyMinGuests) {
     return {
       isBookable: false,
       statusType: 'phone_only',
       availableSlots: [],
+      slots: [],
       isClosed: false,
       usesDateOverride: false,
       reason: 'Party size requires phone booking'
@@ -56,6 +60,7 @@ export async function calculateAvailability(
       isBookable: false,
       statusType: 'invalid_request',
       availableSlots: [],
+      slots: [],
       isClosed: false,
       usesDateOverride: false,
       reason: 'Invalid date format'
@@ -80,20 +85,22 @@ export async function calculateAvailability(
       isBookable: false,
       statusType: 'closed',
       availableSlots: [],
+      slots: [],
       isClosed: true,
       usesDateOverride: isOverride,
       reason: 'Restaurant is closed on this date/service'
     };
   }
 
-  // Generate arrival slots
-  const availableSlots: string[] = [];
+  // Generate arrival slots (15-minute intervals default)
+  const slotInterval = activeSetup.slotIntervalMinutes || 15;
+  const allTimeSlots: string[] = [];
   let currentSlot = parseISO(`${dateStr}T${activeSetup.firstArrivalTime}:00`);
   const endSlot = parseISO(`${dateStr}T${activeSetup.lastArrivalTime}:00`);
   
   while (currentSlot <= endSlot) {
-    availableSlots.push(format(currentSlot, 'HH:mm'));
-    currentSlot = addMinutes(currentSlot, activeSetup.slotIntervalMinutes);
+    allTimeSlots.push(format(currentSlot, 'HH:mm'));
+    currentSlot = addMinutes(currentSlot, slotInterval);
   }
 
   // Generate Table Inventory
@@ -113,12 +120,13 @@ export async function calculateAvailability(
 
   // Remove Occupied Tables
   const bookings = await getBookingsByDate(dateStr);
-  const confirmedBookings = bookings.filter(b => 
-    (b.status === 'confirmed' || b.status === 'pending') && b.assigned_table_label
+  const activeBookings = bookings.filter(b => 
+    b.status === 'confirmed' || b.status === 'pending'
   );
+  const confirmedBookingsWithTable = activeBookings.filter(b => b.assigned_table_label);
   
   // Tables are blocked for the WHOLE service.
-  confirmedBookings.forEach(b => {
+  confirmedBookingsWithTable.forEach(b => {
     const tableIndex = tableInventory.findIndex(t => t.label === b.assigned_table_label && t.isAvailable);
     if (tableIndex !== -1) {
       tableInventory[tableIndex].isAvailable = false;
@@ -152,11 +160,34 @@ export async function calculateAvailability(
     }
   }
 
-  if (!suggestedTable) {
+  // Build detailed slot availability
+  const detailedSlots: SlotAvailability[] = allTimeSlots.map(time => {
+    const count = activeBookings.filter(b => b.booking_time === time).length;
+    const isFull = count >= maxReservationsPerSlot;
+    const available = !isFull && !!suggestedTable;
+    let reason: string | undefined = undefined;
+    if (isFull) {
+      reason = `Slot full (${count}/${maxReservationsPerSlot})`;
+    } else if (!suggestedTable) {
+      reason = 'No suitable table available';
+    }
+    return {
+      time,
+      available,
+      count,
+      maxCapacity: maxReservationsPerSlot,
+      reason
+    };
+  });
+
+  const availableSlots = detailedSlots.filter(s => s.available).map(s => s.time);
+
+  if (!suggestedTable || availableSlots.length === 0) {
     return {
       isBookable: false,
       statusType: 'fully_booked',
       availableSlots: [],
+      slots: detailedSlots,
       isClosed: false,
       usesDateOverride: isOverride,
       remainingCapacitySummary: {
@@ -177,6 +208,7 @@ export async function calculateAvailability(
     isBookable: true,
     statusType,
     availableSlots,
+    slots: detailedSlots,
     suggestedTable,
     isClosed: false,
     usesDateOverride: isOverride,

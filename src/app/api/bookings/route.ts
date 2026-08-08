@@ -56,8 +56,9 @@ export async function POST(request: Request) {
     if (!availability.isBookable) {
        return NextResponse.json({ error: availability.reason || "Pas de disponibilité." }, { status: 400 });
     }
-    if (!availability.availableSlots.includes(time)) {
-      return NextResponse.json({ error: "Créneau horaire non valide." }, { status: 400 });
+    const requestedSlot = availability.slots?.find(s => s.time === time);
+    if (!requestedSlot || !requestedSlot.available) {
+      return NextResponse.json({ error: requestedSlot?.reason || "Créneau horaire non disponible." }, { status: 400 });
     }
 
     // Concurrency Lock
@@ -77,8 +78,9 @@ export async function POST(request: Request) {
     try {
       // Re-check after lock
       const reCheck = await calculateAvailability(date, 'Dinner', guests);
-      if (!reCheck.isBookable || !reCheck.suggestedTable) {
-        return NextResponse.json({ error: "Désolé, la table a été réservée entre-temps." }, { status: 400 });
+      const reCheckSlot = reCheck.slots?.find(s => s.time === time);
+      if (!reCheck.isBookable || !reCheck.suggestedTable || !reCheckSlot || !reCheckSlot.available) {
+        return NextResponse.json({ error: "Désolé, ce créneau horaire ou la table ont été réservés entre-temps." }, { status: 400 });
       }
 
       const bookings = await getBookingsByDate(date);
@@ -171,7 +173,7 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const { id, date, action } = body;
 
-    if (!id || !date || !action || !['approve', 'reject'].includes(action)) {
+    if (!id || !date || !action || !['approve', 'reject', 'cancel'].includes(action)) {
       return NextResponse.json({ error: 'Paramètres invalides' }, { status: 400 });
     }
 
@@ -208,12 +210,16 @@ export async function PATCH(request: Request) {
         booking.assigned_table_capacity = availability.suggestedTable.capacity;
 
         await sendBookingConfirmationEmail(booking as any);
+      } else if (action === 'cancel') {
+        booking.status = 'cancelled_by_restaurant';
       } else {
         booking.status = 'rejected';
       }
 
       bookings[bookingIndex] = booking;
       await saveBookingsForDate(date, bookings);
+
+      return NextResponse.json({ success: true, booking });
 
       return NextResponse.json({ success: true, booking });
     } finally {
