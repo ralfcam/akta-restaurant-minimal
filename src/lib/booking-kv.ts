@@ -40,50 +40,99 @@ const DEFAULT_WEEKLY_TEMPLATES: WeeklyServiceTemplate[] = [
 ];
 
 export async function getRestaurantSettings(): Promise<RestaurantSettings> {
-  const settings = await kv.get<RestaurantSettings>('settings:restaurant');
-  return settings || DEFAULT_SETTINGS;
+  try {
+    const settings = await kv.get<RestaurantSettings>('settings:restaurant');
+    return settings || DEFAULT_SETTINGS;
+  } catch (e) {
+    console.warn("Error reading restaurant settings from KV:", e);
+    return DEFAULT_SETTINGS;
+  }
 }
 
 export async function saveRestaurantSettings(settings: RestaurantSettings): Promise<void> {
-  await kv.set('settings:restaurant', settings);
+  try {
+    await kv.set('settings:restaurant', settings);
+  } catch (e) {
+    console.error("Error saving restaurant settings to KV:", e);
+  }
 }
 
 export async function getWeeklyTemplates(): Promise<WeeklyServiceTemplate[]> {
-  const templates = await kv.get<WeeklyServiceTemplate[]>('template:weekly');
-  return templates || DEFAULT_WEEKLY_TEMPLATES;
+  try {
+    const templates = await kv.get<WeeklyServiceTemplate[]>('template:weekly');
+    return templates || DEFAULT_WEEKLY_TEMPLATES;
+  } catch (e) {
+    console.warn("Error reading weekly templates from KV:", e);
+    return DEFAULT_WEEKLY_TEMPLATES;
+  }
 }
 
 export async function saveWeeklyTemplates(templates: WeeklyServiceTemplate[]): Promise<void> {
-  await kv.set('template:weekly', templates);
+  try {
+    await kv.set('template:weekly', templates);
+  } catch (e) {
+    console.error("Error saving weekly templates to KV:", e);
+  }
 }
 
 export async function getDateOverride(date: string): Promise<DateServiceOverride | null> {
-  return await kv.get<DateServiceOverride>(`override:date:${date}`);
+  try {
+    return await kv.get<DateServiceOverride>(`override:date:${date}`);
+  } catch (e) {
+    console.warn(`Error reading date override for ${date}:`, e);
+    return null;
+  }
 }
 
 export async function saveDateOverride(override: DateServiceOverride): Promise<void> {
-  await kv.set(`override:date:${override.date}`, override);
+  try {
+    await kv.set(`override:date:${override.date}`, override);
+  } catch (e) {
+    console.error(`Error saving date override for ${override.date}:`, e);
+  }
 }
 
 export async function deleteDateOverride(date: string): Promise<void> {
-  await kv.del(`override:date:${date}`);
+  try {
+    await kv.del(`override:date:${date}`);
+  } catch (e) {
+    console.error(`Error deleting date override for ${date}:`, e);
+  }
 }
 
 export async function getBookingsByDate(date: string): Promise<Reservation[]> {
-  const bookings = await kv.get<Reservation[]>(`bookings:date:${date}`);
-  return bookings || [];
+  try {
+    const bookings = await kv.get<Reservation[]>(`bookings:date:${date}`);
+    return bookings || [];
+  } catch (e) {
+    console.warn(`Error reading bookings for ${date}:`, e);
+    return [];
+  }
 }
 
 export async function saveBookingsForDate(date: string, bookings: Reservation[]): Promise<void> {
-  await kv.set(`bookings:date:${date}`, bookings);
-  await kv.sadd('booking_dates', date);
+  try {
+    await kv.set(`bookings:date:${date}`, bookings);
+    await kv.sadd('booking_dates', date);
+  } catch (e) {
+    console.error(`Error saving bookings for ${date}:`, e);
+  }
 }
 
 export async function getBlockedCapacities(date: string): Promise<BlockedCapacity[]> {
-  const blocks = await kv.get<BlockedCapacity[]>(`blocks:date:${date}`);
-  return blocks || [];
+  try {
+    const blocks = await kv.get<BlockedCapacity[]>(`blocks:date:${date}`);
+    return blocks || [];
+  } catch (e) {
+    console.warn(`Error reading blocked capacities for ${date}:`, e);
+    return [];
+  }
 }
 
 export async function saveBlockedCapacities(date: string, blocks: BlockedCapacity[]): Promise<void> {
-  await kv.set(`blocks:date:${date}`, blocks);
+  try {
+    await kv.set(`blocks:date:${date}`, blocks);
+  } catch (e) {
+    console.error(`Error saving blocked capacities for ${date}:`, e);
+  }
 }

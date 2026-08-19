@@ -32,14 +32,18 @@ export async function POST(request: Request) {
     const { name, email, phone, date, time, guests, notes } = result.data;
 
     // Rate Limiting
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
-    const rateLimitKey = `ratelimit:booking:${ip}`;
-    const currentRequests = await kv.incr(rateLimitKey);
-    if (currentRequests === 1) {
-      await kv.expire(rateLimitKey, 60);
-    }
-    if (currentRequests > 5) {
-      return NextResponse.json({ error: "Trop de tentatives de réservation. Veuillez patienter une minute." }, { status: 429 });
+    try {
+      const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+      const rateLimitKey = `ratelimit:booking:${ip}`;
+      const currentRequests = await kv.incr(rateLimitKey);
+      if (currentRequests === 1) {
+        await kv.expire(rateLimitKey, 60);
+      }
+      if (currentRequests > 5) {
+        return NextResponse.json({ error: "Trop de tentatives de réservation. Veuillez patienter une minute." }, { status: 429 });
+      }
+    } catch (e) {
+      console.warn("KV rate limit warning:", e);
     }
 
     // Date logic check
@@ -65,10 +69,15 @@ export async function POST(request: Request) {
     const lockKey = `lock:booking:${date}`; 
     let lockAcquired = false;
     
-    for (let attempt = 0; attempt < 5; attempt++) {
-      lockAcquired = (await kv.set(lockKey, 'locked', { nx: true, ex: 5 })) === 'OK';
-      if (lockAcquired) break;
-      await new Promise(resolve => setTimeout(resolve, 150 + Math.random() * 100));
+    try {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        lockAcquired = (await kv.set(lockKey, 'locked', { nx: true, ex: 5 })) === 'OK';
+        if (lockAcquired) break;
+        await new Promise(resolve => setTimeout(resolve, 150 + Math.random() * 100));
+      }
+    } catch (e) {
+      console.warn("KV lock warning:", e);
+      lockAcquired = true;
     }
 
     if (!lockAcquired) {
