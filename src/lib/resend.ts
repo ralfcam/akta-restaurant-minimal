@@ -10,9 +10,7 @@ export async function sendBookingConfirmationEmail(booking: any) {
   }
 
   try {
-    const recipient = booking.client_email.includes('@example.com') || booking.client_email === 'edtroeder@gmail.com'
-      ? booking.client_email 
-      : 'edtroeder@gmail.com';
+    const recipient = booking.client_email;
 
     await resend.emails.send({
       from: 'Réservation Äkta <onboarding@resend.dev>',
@@ -46,9 +44,7 @@ export async function sendPendingManualApprovalEmail(booking: any) {
   }
 
   try {
-    const recipient = booking.client_email.includes('@example.com') || booking.client_email === 'edtroeder@gmail.com'
-      ? booking.client_email 
-      : 'edtroeder@gmail.com';
+    const recipient = booking.client_email;
 
     await resend.emails.send({
       from: 'Réservation Äkta <onboarding@resend.dev>',
@@ -81,9 +77,7 @@ export async function sendBookingRejectionEmail(booking: any) {
   }
 
   try {
-    const recipient = booking.client_email.includes('@example.com') || booking.client_email === 'edtroeder@gmail.com'
-      ? booking.client_email 
-      : 'edtroeder@gmail.com';
+    const recipient = booking.client_email;
 
     await resend.emails.send({
       from: 'Réservation Äkta <onboarding@resend.dev>',
