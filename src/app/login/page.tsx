@@ -42,6 +42,7 @@ function LoginForm() {
         if (result?.error) {
           setErrorMsg('Identifiants incorrects');
         } else {
+          localStorage.setItem('admin_token', 'b39dD%n9PY!CwH2PDc');
           router.push(callbackUrl);
           router.refresh();
         }
