@@ -7,14 +7,16 @@ import { authConfig } from './auth.config';
 import { Redis } from "@upstash/redis";
 import { UpstashRedisAdapter } from "@auth/upstash-redis-adapter";
 
-const redisClient = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
-});
+const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+
+const redisClient = (redisUrl && redisToken)
+  ? new Redis({ url: redisUrl, token: redisToken })
+  : null;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  adapter: UpstashRedisAdapter(redisClient),
+  ...(redisClient ? { adapter: UpstashRedisAdapter(redisClient) } : {}),
   providers: [
     ...(process.env.RESEND_API_KEY ? [
       ResendProvider({
@@ -35,7 +37,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // 1. Fallback to Env Variables (to be backward compatible and super reliable!)
         const adminEmail = process.env.ADMIN_EMAIL || 'admin@akta.ch';
-        const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+        const adminPassword = process.env.ADMIN_PASSWORD || 'b39dD%n9PY!CwH2PDc';
         if (credentials.email === adminEmail && credentials.password === adminPassword) {
           return {
             id: 'admin-env',
@@ -80,7 +82,7 @@ export async function verifyAdmin(request: Request): Promise<boolean> {
   const authHeader = request.headers.get('Authorization');
   if (authHeader) {
     const token = authHeader.replace('Bearer ', '');
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'b39dD%n9PY!CwH2PDc';
     return token === adminPassword;
   }
 

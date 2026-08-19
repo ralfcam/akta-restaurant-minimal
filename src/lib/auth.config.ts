@@ -21,7 +21,7 @@ export const authConfig = {
       return session;
     }
   },
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'akta-restaurant-secret-key-2026-auth-fallback',
   trustHost: true,
   pages: {
     signIn: '/login',

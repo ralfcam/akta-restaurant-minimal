@@ -331,4 +331,48 @@ describe('calculateAvailability', () => {
     expect(res.availableSlots).toContain('20:15');
   });
 
+  it('Respects custom maxReservationsPerSlot setting if configured', async () => {
+    vi.mocked(bookingKv.getRestaurantSettings).mockResolvedValue({
+      ...defaultSettings,
+      maxReservationsPerSlot: 1 // Only 1 allowed
+    });
+
+    vi.mocked(bookingKv.getWeeklyTemplates).mockResolvedValue([
+      { weekday: 5, serviceName: "Dinner", isOpen: true, firstArrivalTime: "18:00", lastArrivalTime: "18:30", slotIntervalMinutes: 15, tables: [
+          { tableCapacity: 2, tableCount: 5 }
+      ]}
+    ] as any);
+
+    vi.mocked(bookingKv.getBookingsByDate).mockResolvedValue([
+      {
+        id: 'b1',
+        client_name: 'Client 1',
+        client_email: 'c1@test.com',
+        client_phone: '123',
+        booking_date: '2026-07-03',
+        booking_time: '18:15',
+        guests: 2,
+        status: 'confirmed',
+        created_at: new Date().toISOString()
+      }
+    ]);
+
+    const res = await calculateAvailability('2026-07-03', 'Dinner', 2);
+    const slot1815 = res.slots?.find(s => s.time === '18:15');
+
+    expect(slot1815?.available).toBe(false);
+    expect(slot1815?.maxCapacity).toBe(1);
+  });
+
+  it('Generates exact border slots from firstArrivalTime to lastArrivalTime included', async () => {
+    vi.mocked(bookingKv.getWeeklyTemplates).mockResolvedValue([
+      { weekday: 5, serviceName: "Dinner", isOpen: true, firstArrivalTime: "18:00", lastArrivalTime: "19:00", slotIntervalMinutes: 15, tables: [
+          { tableCapacity: 2, tableCount: 5 }
+      ]}
+    ] as any);
+
+    const res = await calculateAvailability('2026-07-03', 'Dinner', 2);
+    expect(res.slots?.map(s => s.time)).toEqual(['18:00', '18:15', '18:30', '18:45', '19:00']);
+  });
+
 });
